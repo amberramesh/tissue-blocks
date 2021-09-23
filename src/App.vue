@@ -28,7 +28,7 @@ const datasets = [
   'KRP462C-1',
   'KRP462P-1'
 ]
-const BASE_URL = '/specimen_data/'
+const BASE_URL = 'specimen_data/'
 
 export default {
   name: 'App',
