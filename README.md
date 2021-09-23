@@ -1,4 +1,4 @@
-# tissue-blocks-bars
+# tissue-blocks
 
 ## Project setup
 ```
