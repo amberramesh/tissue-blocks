@@ -1,11 +1,11 @@
 <template>
   <div id="app">
-    <canvas ref="stackedBars" width="1600" height="800"></canvas>
+    <canvas ref="stackedBars" width="1600" height="1000"></canvas>
   </div>
 </template>
 
 <script>
-import * as d3 from 'd3'
+import { csv } from 'd3-fetch'
 
 const datasets = [
   'Azimuth',
@@ -39,14 +39,14 @@ export default {
   },
   methods: {
     getRandomColor() {
-        return `#${parseInt(Math.random() * (Math.pow(16, 6))).toString(16).padStart(6, '0')}`;
+      return `#${parseInt(Math.random() * (Math.pow(16, 6))).toString(16).padStart(6, '0')}`;
     }
   },
   async mounted() {
     const graphData = [];
     let cellTypes = new Set();
     for (const data of datasets) {
-      const csvData = d3.csvParse(await d3.text(BASE_URL + data + '.csv'));
+      const csvData = await csv(`${BASE_URL}${data}.csv`);
       csvData.forEach(row => {
         cellTypes.add(row['Cell Type'])
       })
@@ -76,6 +76,9 @@ export default {
             display: true,
             text: 'Cell Type Count Comparison'
           },
+          legend: {
+            position: 'right'
+          }
         },
         responsive: true,
         scales: {
