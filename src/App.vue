@@ -8,7 +8,7 @@
 import { csv } from 'd3-fetch'
 
 const datasets = [
-  'Azimuth',
+  'Azimuth_L3',
   'K1900174_2',
   '18-162-2-M2',
   '18-142-3-M2',
