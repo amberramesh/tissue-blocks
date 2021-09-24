@@ -84,9 +84,17 @@ export default {
         scales: {
           x: {
             stacked: true,
+            title: {
+              display: true,
+              text: 'Datasets'
+            }
           },
           y: {
-            stacked: true
+            stacked: true,
+            title: {
+              display: true,
+              text: 'Cell Count'
+            }
           }
         }
       }
