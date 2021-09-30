@@ -15,6 +15,7 @@ Cycling Mononuclear Phagocyte,47
 Descending Thin Limb Type 1,1524
 Descending Thin Limb Type 2,901
 Descending Thin Limb Type 3,1392
+Descending Vasa Recta Endothelial,1838
 Distal Convoluted Tubule Type 1,3440
 Distal Convoluted Tubule Type 2,278
 Fibroblast,1851
@@ -22,17 +23,21 @@ Glomerular Capillary Endothelial,1041
 Inner Medullary Collecting Duct,4095
 Intercalated Type B,768
 Lymphatic Endothelial,123
+M2 Macrophage,1263
 Macula Densa,1045
 Mast,109
 Medullary Fibroblast,4587
 Medullary Thick Ascending Limb,4160
 Mesangial,200
 Monocyte-derived,803
+Natural Killer T,211
 Neutrophil,58
+Non-classical monocyte,163
 Outer Medullary Collecting Duct Intercalated Type A,933
 Outer Medullary Collecting Duct Principal,894
 Papillary Tip Epithelial,322
 Parietal Epithelial,527
+Peritubular Capilary Endothelial ,2757
 Plasma,98
 Plasmacytoid Dendritic,31
 Podocyte,1028
