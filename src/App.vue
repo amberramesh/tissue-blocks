@@ -1,5 +1,9 @@
 <template>
   <div id="app">
+    <input type="radio" id="raw_count" name="barYProp" value="count" v-model="barYProp">
+    <label for="raw_count">Raw Count</label>
+    <input type="radio" id="percentage" name="barYProp" value="percentage" v-model="barYProp">
+    <label for="percentage">Percentage</label>
     <canvas ref="stackedBars" width="1600" height="1000"></canvas>
   </div>
 </template>
@@ -93,7 +97,14 @@ export default {
   data() {
     return {
       chart: null,
-      colorPalette: [...colorPalette]
+      colorPalette: [...colorPalette],
+      cellMap: new Map(),
+      barYProp: 'count'
+    }
+  },
+  computed: {
+    cellCountText() {
+      return this.barYProp === 'count' ? 'Cell Count' : 'Cell Proportion'
     }
   },
   methods: {
@@ -101,18 +112,40 @@ export default {
       return this.colorPalette.length ? this.colorPalette.pop() : `#${parseInt(Math.random() * (Math.pow(16, 6))).toString(16).padStart(6, '0')}`;
     }
   },
+  watch: {
+    barYProp() {
+      this.chart.data.datasets.forEach(d => {
+        d.data.splice(0, d.data.length, ...this.cellMap.get(d.label).map(cellProps => cellProps[this.barYProp]))
+      })
+      this.chart.options.scales.y.max = this.barYProp === 'percentage' ? 100 : null
+      this.chart.options.scales.y.title.text = this.cellCountText
+      this.chart.update()
+    }
+  },
   async mounted() {
+    this.cellMap.clear()
     this.colorPalette.splice(0, this.length, ...colorPalette);
     const graphData = [];
     let cellTypes = new Set();
     for (const data of datasets) {
       const csvData = await csv(`${BASE_URL}${data}.csv`);
       csvData.forEach(row => {
-        cellTypes.add(row['Cell Type'])
+        cellTypes.add(row['cell_type'])
       })
       graphData.push(csvData);
     }
-    cellTypes = Array.from(cellTypes).sort();
+    cellTypes = Array.from(cellTypes).sort()
+    // 3D Map of cell types vs. attributes over each dataset
+    // Third-dimension is the dataset object rather than another array
+    cellTypes.forEach(ct => {
+      // Array of d objects where d is number of datasets
+      const cellXDatasets = []
+      for (const dataset of graphData) {
+        const cellProps = dataset.find(obj => obj['cell_type'] === ct) || {}
+        cellXDatasets.push(cellProps)
+      }
+      this.cellMap.set(ct, cellXDatasets)
+    })
 
     const ctx = this.$refs.stackedBars.getContext('2d');
     const chartObj = {
@@ -122,10 +155,7 @@ export default {
         datasets: cellTypes.map(label => {
           return {
             label,
-            data: datasets.map((_, i) => {
-              const cellObj = graphData[i].find(obj => obj['Cell Type'] === label)
-              return cellObj ? cellObj['Count'] : 0
-            }),
+            data: this.cellMap.get(label).map(cellProps => cellProps[this.barYProp]),
             backgroundColor: this.getRandomColor()
           }
         })
@@ -153,7 +183,7 @@ export default {
             stacked: true,
             title: {
               display: true,
-              text: 'Cell Count'
+              text: this.cellCountText
             }
           }
         }

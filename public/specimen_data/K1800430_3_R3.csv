@@ -1,39 +1,39 @@
-Cell Type,Count
-Medullary Thick Ascending Limb,284
-Cortical Thick Ascending Limb,75
-Macula Densa,1
-Descending Thin Limb Type 3,16
-Descending Thin Limb Type 2,42
-Descending Thin Limb Type 1,105
-Outer Medullary Collecting Duct Principal,135
-Inner Medullary Collecting Duct,4
-Cortical Collecting Duct Principal,4
-Medullary Fibroblast,106
-Fibroblast,20
-Proximal Tubule Epithelial Segment 3,36
-Proximal Tubule Epithelial Segment 1,7
-Outer Medullary Collecting Duct Intercalated Type A,17
-Cortical Collecting Duct Intercalated Type A,3
-Connecting Tubule Intercalated Type A,1
-Ascending Vasa Recta Endothelial,72
-Peritubular Capilary Endothelial ,21
-Descending Vasa Recta Endothelial ,67
-Afferent / Efferent Arteriole Endothelial,10
-Glomerular Capillary Endothelial,2
-Lymphatic Endothelial,3
-Schwann / Neural,1
-Vascular Smooth Muscle / Pericyte,29
-Cortical Vascular Smooth Muscle / Pericyte,4
-T,6
-Tissue-resident Macrophage,22
-B,2
-Monocyte-derived,6
-Mast,4
-Plasma,3
-Cycling Mononuclear Phagocyte,2
-Neutrophil,1
-Monocyte,1
-Connecting Tubule,6
-Connecting Tubule Principal,2
-Ascending Thin Limb,6
-Distal Convoluted Tubule Type 1,2
+cell_type,annotation_level,ontology_id,sex,race,count,percentage
+Afferent / Efferent Arteriole Endothelial,kidney_l3,CL_1001096,F,W,10,0.886525
+Ascending Thin Limb,kidney_l3,CL_1001107,F,W,6,0.531915
+Ascending Vasa Recta Endothelial,kidney_l3,CL_1001131,F,W,72,6.382979
+B,kidney_l3,CL_0000785,F,W,2,0.177305
+Connecting Tubule,kidney_l3,CL_1000768,F,W,6,0.531915
+Connecting Tubule Intercalated Type A,kidney_l3,CL_0005011,F,W,1,0.088652
+Connecting Tubule Principal,kidney_l3,CL_1001431,F,W,2,0.177305
+Cortical Collecting Duct Intercalated Type A,kidney_l3,CL_0005011,F,W,3,0.265957
+Cortical Collecting Duct Principal,kidney_l3,CL_1001431,F,W,4,0.354610
+Cortical Thick Ascending Limb,kidney_l3,,F,W,75,6.648936
+Cortical Vascular Smooth Muscle / Pericyte,kidney_l3,CL_0000359,F,W,4,0.354610
+Cycling Mononuclear Phagocyte,kidney_l3,CL_0000113,F,W,2,0.177305
+Descending Thin Limb Type 1,kidney_l3,CL_1001111,F,W,105,9.308511
+Descending Thin Limb Type 2,kidney_l3,CL_1001111,F,W,42,3.723404
+Descending Thin Limb Type 3,kidney_l3,CL_1001111,F,W,16,1.418440
+Descending Vasa Recta Endothelial ,kidney_l3,CL_1001285,F,W,67,5.939716
+Distal Convoluted Tubule Type 1,kidney_l3,CL_1000849,F,W,2,0.177305
+Fibroblast,kidney_l3,CL_0000057,F,W,20,1.773050
+Glomerular Capillary Endothelial,kidney_l3,CL_1001005,F,W,2,0.177305
+Inner Medullary Collecting Duct,kidney_l3,CL_1000547,F,W,4,0.354610
+Lymphatic Endothelial,kidney_l3,CL_0002138,F,W,3,0.265957
+Macula Densa,kidney_l3,CL_1000850,F,W,1,0.088652
+Mast,kidney_l3,CL_0000097,F,W,4,0.354610
+Medullary Fibroblast,kidney_l3,CL_0000057,F,W,106,9.397163
+Medullary Thick Ascending Limb,kidney_l3,CL_1001108,F,W,284,25.177305
+Monocyte,kidney_l3,,F,W,1,0.088652
+Monocyte-derived,kidney_l3,CL_0000576,F,W,6,0.531915
+Neutrophil,kidney_l3,CL_0000775,F,W,1,0.088652
+Outer Medullary Collecting Duct Intercalated Type A,kidney_l3,CL_1000717,F,W,17,1.507092
+Outer Medullary Collecting Duct Principal,kidney_l3,CL_1000716,F,W,135,11.968085
+Peritubular Capilary Endothelial ,kidney_l3,CL_1001033,F,W,21,1.861702
+Plasma,kidney_l3,CL_0000786,F,W,3,0.265957
+Proximal Tubule Epithelial Segment 1,kidney_l3,CL_0002306,F,W,7,0.620567
+Proximal Tubule Epithelial Segment 3,kidney_l3,CL_0002306,F,W,36,3.191489
+Schwann / Neural,kidney_l3,CL_0002573,F,W,1,0.088652
+T,kidney_l3,CL_000084,F,W,6,0.531915
+Tissue-resident Macrophage,kidney_l3,,F,W,22,1.950355
+Vascular Smooth Muscle / Pericyte,kidney_l3,CL_0000359,F,W,29,2.570922
