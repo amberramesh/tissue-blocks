@@ -110,6 +110,11 @@ export default {
   methods: {
     getRandomColor() {
       return this.colorPalette.length ? this.colorPalette.pop() : `#${parseInt(Math.random() * (Math.pow(16, 6))).toString(16).padStart(6, '0')}`;
+    },
+    getOrdering(cellType) {
+      return Array.from(this.cellMap.get(cellType))
+        .sort((a, b) => a[this.barYProp] - b[this.barYProp])
+        .map(cellProps => cellProps.positionId)
     }
   },
   watch: {
@@ -140,8 +145,9 @@ export default {
     cellTypes.forEach(ct => {
       // Array of d objects where d is number of datasets
       const cellXDatasets = []
-      for (const dataset of graphData) {
+      for (const [index, dataset] of graphData.entries()) {
         const cellProps = dataset.find(obj => obj['cell_type'] === ct) || {}
+        cellProps.positionId = index
         cellXDatasets.push(cellProps)
       }
       this.cellMap.set(ct, cellXDatasets)
