@@ -121,7 +121,7 @@ export default {
       return this.barYProp === 'count' ? 'Cell Count' : 'Cell Proportion'
     },
     ordering() {
-      return this.selectedCellType === 'None' ? Array(datasets.length).fill().map((_, i) => i) : this.getOrdering(this.selectedCellType)
+      return this.selectedCellType === 'None' ? Array(datasets.length).fill().map((_, i) => i).slice(2) : this.getOrdering(this.selectedCellType)
     }
   },
   methods: {
