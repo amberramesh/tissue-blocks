@@ -1,5 +1,16 @@
 <template>
   <div id="app">
+    
+    <label for="selected_cell_type">Sort By: </label>
+    <select id="selected_cell_type" v-model="selectedCellType">
+      <option v-for="name, i in cellNames" :key="i" :value="name">{{ name }}</option>
+    </select>
+    &nbsp;
+    <select id="order_type" v-model="orderType">
+      <option selected value="asc">Ascending</option>
+      <option value="desc">Descending</option>
+    </select>
+    <br /><br />
     <input type="radio" id="raw_count" name="barYProp" value="count" v-model="barYProp">
     <label for="raw_count">Raw Count</label>
     <input type="radio" id="percentage" name="barYProp" value="percentage" v-model="barYProp">
@@ -99,12 +110,18 @@ export default {
       chart: null,
       colorPalette: [...colorPalette],
       cellMap: new Map(),
-      barYProp: 'count'
+      barYProp: 'count',
+      selectedCellType: 'None',
+      orderType: 'asc',
+      cellNames: []
     }
   },
   computed: {
     cellCountText() {
       return this.barYProp === 'count' ? 'Cell Count' : 'Cell Proportion'
+    },
+    ordering() {
+      return this.selectedCellType === 'None' ? Array(datasets.length).fill().map((_, i) => i) : this.getOrdering(this.selectedCellType)
     }
   },
   methods: {
@@ -113,17 +130,33 @@ export default {
     },
     getOrdering(cellType) {
       return Array.from(this.cellMap.get(cellType))
-        .sort((a, b) => a[this.barYProp] - b[this.barYProp])
-        .map(cellProps => cellProps.positionId)
+        .sort((d1, d2) => parseFloat(d1[this.barYProp] || 0) - parseFloat(d2[this.barYProp] || 0))
+        .map(dataset => dataset.positionId)
+        .filter(v => ![0, 1].includes(v))
+    },
+    reorderDatasets() {
+      const ordering = [0, 1].concat(this.orderType === 'asc' ? this.ordering : Array.from(this.ordering).reverse())
+      this.chart.data.datasets.forEach(d => {
+        const cellXDatasets = this.cellMap.get(d.label)
+        const orderedDatasets = ordering.map(i => cellXDatasets[i])
+        d.data.splice(0, d.data.length, ...orderedDatasets.map(cellProps => cellProps[this.barYProp]))
+      })
+      this.chart.data.labels.splice(0, datasets.length, ...ordering.map(i => datasets[i]))
     }
   },
   watch: {
     barYProp() {
-      this.chart.data.datasets.forEach(d => {
-        d.data.splice(0, d.data.length, ...this.cellMap.get(d.label).map(cellProps => cellProps[this.barYProp]))
-      })
+      this.reorderDatasets()
       this.chart.options.scales.y.max = this.barYProp === 'percentage' ? 100 : null
       this.chart.options.scales.y.title.text = this.cellCountText
+      this.chart.update()
+    },
+    ordering() {
+      this.reorderDatasets()
+      this.chart.update()
+    },
+    orderType() {
+      this.reorderDatasets()
       this.chart.update()
     }
   },
@@ -152,12 +185,13 @@ export default {
       }
       this.cellMap.set(ct, cellXDatasets)
     })
+    this.cellNames.splice(0, this.cellNames.length, 'None', ...Array.from(this.cellMap.keys()))
 
     const ctx = this.$refs.stackedBars.getContext('2d');
     const chartObj = {
       type: 'bar',
       data: {
-        labels: datasets,
+        labels: [...datasets],
         datasets: cellTypes.map(label => {
           return {
             label,
