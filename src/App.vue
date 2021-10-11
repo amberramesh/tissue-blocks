@@ -1,9 +1,8 @@
 <template>
   <div id="app">
-    
     <label for="selected_cell_type">Sort By: </label>
     <select id="selected_cell_type" v-model="selectedCellType">
-      <option v-for="name, i in cellNames" :key="i" :value="name">{{ name }}</option>
+      <option v-for="name, i in cellTypes" :key="i" :value="name">{{ name }}</option>
     </select>
     &nbsp;
     <select id="order_type" v-model="orderType">
@@ -11,11 +10,17 @@
       <option value="desc">Descending</option>
     </select>
     <br /><br />
+    <label for="group_by">Group By: </label>
+    <select id="group_by" v-model="groupBy">
+      <option v-for="group, i in groupTypes" :key="i" :value="group.value">{{ group.name }}</option>
+    </select>
+    <br /><br />
+    <label for="barYProp">Y-Axis: </label>
     <input type="radio" id="raw_count" name="barYProp" value="count" v-model="barYProp">
     <label for="raw_count">Raw Count</label>
     <input type="radio" id="percentage" name="barYProp" value="percentage" v-model="barYProp">
     <label for="percentage">Percentage</label>
-    <canvas ref="stackedBars" width="1600" height="1000"></canvas>
+    <canvas id="stackedBars" ref="stackedBars" width="1600" height="1000"></canvas>
   </div>
 </template>
 
@@ -109,11 +114,26 @@ export default {
     return {
       chart: null,
       colorPalette: [...colorPalette],
-      cellMap: new Map(),
+      cellMap: new Map([['None', []]]),
       barYProp: 'count',
       selectedCellType: 'None',
       orderType: 'asc',
-      cellNames: []
+      cellTypes: [],
+      groupBy: 'none',
+      groupTypes: [
+        {
+          name: 'None',
+          value: 'none'
+        },
+        {
+          name: 'Sex',
+          value: 'sex'
+        },
+        {
+          name: 'Ethnicity',
+          value: 'race'
+        },
+      ]
     }
   },
   computed: {
@@ -121,7 +141,7 @@ export default {
       return this.barYProp === 'count' ? 'Cell Count' : 'Cell Proportion'
     },
     ordering() {
-      return this.selectedCellType === 'None' ? Array(datasets.length).fill().map((_, i) => i).slice(2) : this.getOrdering(this.selectedCellType)
+      return this.getOrdering(this.selectedCellType)
     }
   },
   methods: {
@@ -129,10 +149,16 @@ export default {
       return this.colorPalette.length ? this.colorPalette.pop() : `#${parseInt(Math.random() * (Math.pow(16, 6))).toString(16).padStart(6, '0')}`;
     },
     getOrdering(cellType) {
-      return Array.from(this.cellMap.get(cellType))
-        .sort((d1, d2) => parseFloat(d1[this.barYProp] || 0) - parseFloat(d2[this.barYProp] || 0))
-        .map(dataset => dataset.positionId)
-        .filter(v => ![0, 1].includes(v))
+      const orderedDatasets = Array.from(this.cellMap.get(cellType))
+        // Exclude ASCT+B and Azimuth bars while ordering
+          .slice(2)
+          .sort((d1, d2) => parseFloat(d1[this.barYProp] || 0) - parseFloat(d2[this.barYProp] || 0))
+      switch (this.groupBy) {
+        case 'sex': 
+        case 'race':
+          orderedDatasets.sort((d1, d2) => (d1[this.groupBy] ?? '').localeCompare(d2[this.groupBy] ?? ''))
+      }
+      return orderedDatasets.map(dataset => dataset.id)
     },
     reorderDatasets() {
       const ordering = [0, 1].concat(this.orderType === 'asc' ? this.ordering : Array.from(this.ordering).reverse())
@@ -158,6 +184,10 @@ export default {
     orderType() {
       this.reorderDatasets()
       this.chart.update()
+    },
+    groupBy() {
+      this.reorderDatasets()
+      this.chart.update()
     }
   },
   async mounted() {
@@ -165,34 +195,46 @@ export default {
     this.colorPalette.splice(0, this.length, ...colorPalette);
     const graphData = [];
     let cellTypes = new Set();
-    for (const data of datasets) {
-      const csvData = await csv(`${BASE_URL}${data}.csv`);
+    // Unsorted initial dataset
+    for (const [idx, title] of datasets.entries()) {
+      const csvData = await csv(`${BASE_URL}${title}.csv`);
       csvData.forEach(row => {
         cellTypes.add(row['cell_type'])
       })
+      const specimenProps = csvData.find(row => row['sex'] && row['race'])
+      if (specimenProps) {
+        datasets[idx] = `${title} (${specimenProps['race']}/${specimenProps['sex']})`
+      }
       graphData.push(csvData);
     }
-    cellTypes = Array.from(cellTypes).sort()
+    this.cellTypes = Array.from(cellTypes).sort()
+    // Add 'None' type for default ordering
+    this.cellTypes.splice(0, 0, 'None')
     // 3D Map of cell types vs. attributes over each dataset
     // Third-dimension is the dataset object rather than another array
-    cellTypes.forEach(ct => {
+    this.cellTypes.forEach(ct => {
       // Array of d objects where d is number of datasets
       const cellXDatasets = []
-      for (const [index, dataset] of graphData.entries()) {
+      for (const [id, dataset] of graphData.entries()) {
         const cellProps = dataset.find(obj => obj['cell_type'] === ct) || {}
-        cellProps.positionId = index
+        const { sex, race } = dataset.find(obj => obj['sex'] && obj['race']) || {}
+        Object.assign(cellProps, {
+          id,
+          sex,
+          race
+        })
         cellXDatasets.push(cellProps)
       }
       this.cellMap.set(ct, cellXDatasets)
     })
-    this.cellNames.splice(0, this.cellNames.length, 'None', ...Array.from(this.cellMap.keys()))
 
     const ctx = this.$refs.stackedBars.getContext('2d');
     const chartObj = {
       type: 'bar',
       data: {
         labels: [...datasets],
-        datasets: cellTypes.map(label => {
+        // Exclude 'None' type while creating datasets
+        datasets: this.cellTypes.slice(1).map(label => {
           return {
             label,
             data: this.cellMap.get(label).map(cellProps => cellProps[this.barYProp]),
