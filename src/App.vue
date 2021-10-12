@@ -1,21 +1,21 @@
 <template>
   <div id="app">
     <label for="selected_cell_type">Sort By: </label>
-    <select id="selected_cell_type" v-model="selectedCellType">
+    <select id="selected_cell_type" v-model="selectedCellType" @change="reorderAndUpdate">
       <option v-for="name, i in cellTypes" :key="i" :value="name">{{ name }}</option>
     </select>
     &nbsp;
-    <select id="order_type" v-model="orderType">
+    <select id="order_type" v-model="orderType" @change="reorderAndUpdate">
       <option selected value="asc">Ascending</option>
       <option value="desc">Descending</option>
     </select>
     <br /><br />
     <label for="group_by">Group By: </label>
-    <select id="group_by" v-model="groupBy">
+    <select id="group_by" v-model="groupBy" @change="reorderAndUpdate">
       <option v-for="group, i in GroupType" :key="i" :value="group.value">{{ group.name }}</option>
     </select>
     <br /><br />
-    <label for="yAxisAttr">Y-Axis: </label>
+    <label>Y-Axis: </label>
     <input type="radio" id="raw_count" name="yAxisAttr" value="count" v-model="yAxisAttr">
     <label for="raw_count">Raw Count</label>
     <input type="radio" id="percentage" name="yAxisAttr" value="percentage" v-model="yAxisAttr">
@@ -77,26 +77,17 @@ export default {
         d.data.splice(0, d.data.length, ...orderedDatasets.map(cellProps => cellProps[this.yAxisAttr]))
       })
       this.chart.data.labels.splice(0, datasets.length, ...ordering.map(i => datasets[i]))
+    },
+    reorderAndUpdate() {
+      this.reorderDatasets()
+      this.chart.update()
     }
   },
   watch: {
     yAxisAttr() {
-      this.reorderDatasets()
       this.chart.options.scales.y.max = this.yAxisAttr === 'percentage' ? 100 : null
       this.chart.options.scales.y.title.text = this.yAxisLabel
-      this.chart.update()
-    },
-    selectedCellType() {
-      this.reorderDatasets()
-      this.chart.update()
-    },
-    orderType() {
-      this.reorderDatasets()
-      this.chart.update()
-    },
-    groupBy() {
-      this.reorderDatasets()
-      this.chart.update()
+      this.reorderAndUpdate()
     }
   },
   async mounted() {
