@@ -12,13 +12,13 @@
     <br /><br />
     <label for="group_by">Group By: </label>
     <select id="group_by" v-model="groupBy">
-      <option v-for="group, i in groupTypes" :key="i" :value="group.value">{{ group.name }}</option>
+      <option v-for="group, i in GroupType" :key="i" :value="group.value">{{ group.name }}</option>
     </select>
     <br /><br />
-    <label for="barYProp">Y-Axis: </label>
-    <input type="radio" id="raw_count" name="barYProp" value="count" v-model="barYProp">
+    <label for="yAxisAttr">Y-Axis: </label>
+    <input type="radio" id="raw_count" name="yAxisAttr" value="count" v-model="yAxisAttr">
     <label for="raw_count">Raw Count</label>
-    <input type="radio" id="percentage" name="barYProp" value="percentage" v-model="barYProp">
+    <input type="radio" id="percentage" name="yAxisAttr" value="percentage" v-model="yAxisAttr">
     <label for="percentage">Percentage</label>
     <canvas id="stackedBars" ref="stackedBars" width="1600" height="1000"></canvas>
   </div>
@@ -26,87 +26,7 @@
 
 <script>
 import { csv } from 'd3-fetch'
-
-const datasets = [
-  'ASCT+B',
-  'Azimuth_L3',
-  'K1900174_2',
-  '18-162-2-M2',
-  '18-142-3-M2',
-  '18-312-2-M2',
-  'K1900175_1_R1',
-  'K1800430_3_R3',
-  'K1900019_1_R3',
-  'K1900387_1_R1',
-  'K1900387_4_R1',
-  'K2000094_2_R1',
-  '446_B3',
-  'K1800364_1',
-  '446_B1',
-  'KRP460C-1',
-  'KRP460P-1',
-  'KRP461C-1',
-  'KRP462C-1',
-  'KRP462P-1'
-]
-const colorPalette = [
-  '#db95cd',
-  '#c8feba',
-  '#ddb1f6',
-  '#c2db90',
-  '#f8b8f6',
-  '#99d99d',
-  '#a5a6e4',
-  '#e1e294',
-  '#3bb7ed',
-  '#eda17a',
-  '#6efcfa',
-  '#ffa498',
-  '#2ecdce',
-  '#e395ad',
-  '#98ffdf',
-  '#dd99a2',
-  '#87fff1',
-  '#ffb1b5',
-  '#2ebfb2',
-  '#d3a36a',
-  '#6bb2ed',
-  '#ffe79f',
-  '#8dc5ff',
-  '#c0b46a',
-  '#d5cfff',
-  '#80e2b9',
-  '#cf9fa8',
-  '#beffd4',
-  '#cfa19a',
-  '#87f0ff',
-  '#d2a186',
-  '#42bbcc',
-  '#ffd2a3',
-  '#9ddfff',
-  '#fff5b5',
-  '#b7d4ff',
-  '#e1ffca',
-  '#ffd4e4',
-  '#6ebb96',
-  '#ffd2c1',
-  '#71b6c3',
-  '#c8a580',
-  '#c0fff8',
-  '#c8a491',
-  '#ddffe6',
-  '#bca98f',
-  '#d6e8ff',
-  '#87b78b',
-  '#fdf7ff',
-  '#a3b090',
-  '#fff8ee',
-  '#89b3ba',
-  '#f7ffeb',
-  '#aeaba5',
-  '#9fb0a0'
-];
-const BASE_URL = 'specimen_data/';
+import { BASE_URL, datasets, colorPalette, OrderType, GroupType } from './constants'
 
 export default {
   name: 'App',
@@ -115,44 +35,32 @@ export default {
       chart: null,
       colorPalette: [...colorPalette],
       cellMap: new Map([['None', []]]),
-      barYProp: 'count',
+      yAxisAttr: 'count',
       selectedCellType: 'None',
-      orderType: 'asc',
+      orderType: OrderType.Ascending,
       cellTypes: [],
-      groupBy: 'none',
-      groupTypes: [
-        {
-          name: 'None',
-          value: 'none'
-        },
-        {
-          name: 'Sex',
-          value: 'sex'
-        },
-        {
-          name: 'Ethnicity',
-          value: 'race'
-        },
-      ]
+      groupBy: GroupType.None,
+      GroupType: Object.entries(GroupType)
+        .reduce((types, [name, value]) => {
+          types.push({ name, value })
+          return types
+        }, [])
     }
   },
   computed: {
-    cellCountText() {
-      return this.barYProp === 'count' ? 'Cell Count' : 'Cell Proportion'
-    },
-    ordering() {
-      return this.getOrdering(this.selectedCellType)
+    yAxisLabel() {
+      return this.yAxisAttr === 'count' ? 'Cell Count' : 'Cell Proportion'
     }
   },
   methods: {
     getRandomColor() {
       return this.colorPalette.length ? this.colorPalette.pop() : `#${parseInt(Math.random() * (Math.pow(16, 6))).toString(16).padStart(6, '0')}`;
     },
-    getOrdering(cellType) {
-      const orderedDatasets = Array.from(this.cellMap.get(cellType))
+    getOrdering() {
+      const orderedDatasets = this.cellMap.get(this.selectedCellType)
         // Exclude ASCT+B and Azimuth bars while ordering
-          .slice(2)
-          .sort((d1, d2) => parseFloat(d1[this.barYProp] || 0) - parseFloat(d2[this.barYProp] || 0))
+        .slice(2)
+        .sort((d1, d2) => parseFloat(d1[this.yAxisAttr] || 0) - parseFloat(d2[this.yAxisAttr] || 0))
       switch (this.groupBy) {
         case 'sex': 
         case 'race':
@@ -161,23 +69,24 @@ export default {
       return orderedDatasets.map(dataset => dataset.id)
     },
     reorderDatasets() {
-      const ordering = [0, 1].concat(this.orderType === 'asc' ? this.ordering : Array.from(this.ordering).reverse())
+      let ordering = this.getOrdering()
+      ordering = [0, 1].concat(this.orderType === OrderType.Ascending? ordering : ordering.reverse())
       this.chart.data.datasets.forEach(d => {
-        const cellXDatasets = this.cellMap.get(d.label)
-        const orderedDatasets = ordering.map(i => cellXDatasets[i])
-        d.data.splice(0, d.data.length, ...orderedDatasets.map(cellProps => cellProps[this.barYProp]))
+        const datasets = this.cellMap.get(d.label)
+        const orderedDatasets = ordering.map(i => datasets[i])
+        d.data.splice(0, d.data.length, ...orderedDatasets.map(cellProps => cellProps[this.yAxisAttr]))
       })
       this.chart.data.labels.splice(0, datasets.length, ...ordering.map(i => datasets[i]))
     }
   },
   watch: {
-    barYProp() {
+    yAxisAttr() {
       this.reorderDatasets()
-      this.chart.options.scales.y.max = this.barYProp === 'percentage' ? 100 : null
-      this.chart.options.scales.y.title.text = this.cellCountText
+      this.chart.options.scales.y.max = this.yAxisAttr === 'percentage' ? 100 : null
+      this.chart.options.scales.y.title.text = this.yAxisLabel
       this.chart.update()
     },
-    ordering() {
+    selectedCellType() {
       this.reorderDatasets()
       this.chart.update()
     },
@@ -201,9 +110,9 @@ export default {
       csvData.forEach(row => {
         cellTypes.add(row['cell_type'])
       })
-      const specimenProps = csvData.find(row => row['sex'] && row['race'])
+      const specimenProps = csvData.find(row => row[GroupType.Sex] && row[GroupType.Ethnicity])
       if (specimenProps) {
-        datasets[idx] = `${title} (${specimenProps['race']}/${specimenProps['sex']})`
+        datasets[idx] = `${title} (${specimenProps[GroupType.Ethnicity]}/${specimenProps[GroupType.Sex]})`
       }
       graphData.push(csvData);
     }
@@ -217,7 +126,7 @@ export default {
       const cellXDatasets = []
       for (const [id, dataset] of graphData.entries()) {
         const cellProps = dataset.find(obj => obj['cell_type'] === ct) || {}
-        const { sex, race } = dataset.find(obj => obj['sex'] && obj['race']) || {}
+        const { sex, race } = dataset.find(obj => obj[GroupType.Sex] && obj[GroupType.Ethnicity]) || {}
         Object.assign(cellProps, {
           id,
           sex,
@@ -237,7 +146,7 @@ export default {
         datasets: this.cellTypes.slice(1).map(label => {
           return {
             label,
-            data: this.cellMap.get(label).map(cellProps => cellProps[this.barYProp]),
+            data: this.cellMap.get(label).map(cellProps => cellProps[this.yAxisAttr]),
             backgroundColor: this.getRandomColor()
           }
         })
@@ -265,7 +174,7 @@ export default {
             stacked: true,
             title: {
               display: true,
-              text: this.cellCountText
+              text: this.yAxisLabel
             }
           }
         }
