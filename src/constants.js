@@ -35,7 +35,7 @@ const datasets = [
   'case_12'
 ]
 
-const colorPalette = [
+const colorPaletteLarge = [
   '#db95cd',
   '#c8feba',
   '#ddb1f6',
@@ -93,6 +93,17 @@ const colorPalette = [
   '#9fb0a0'
 ];
 
+const colorPaletteSmall = [
+  '#66c2a5',
+  '#fc8d62',
+  '#8da0cb',
+  '#e78ac3',
+  '#a6d854',
+  '#ffd92f',
+  '#e5c494',
+  '#b3b3b3'
+];
+
 const OrderType = {
   Ascending: 'asc',
   Descending: 'desc'
@@ -110,7 +121,8 @@ const GroupType = {
 export {
   BASE_URL,
   datasets,
-  colorPalette,
+  colorPaletteSmall,
+  colorPaletteLarge,
   GroupType,
   OrderType
 }

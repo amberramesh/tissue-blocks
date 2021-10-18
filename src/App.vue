@@ -26,14 +26,14 @@
 
 <script>
 import { csv } from 'd3-fetch'
-import { BASE_URL, datasets, colorPalette, OrderType, GroupType } from './constants'
+import { BASE_URL, datasets, colorPaletteSmall, OrderType, GroupType } from './constants'
 
 export default {
   name: 'App',
   data() {
     return {
       chart: null,
-      colorPalette: [...colorPalette],
+      colorPalette: [...colorPaletteSmall],
       cellMap: new Map([['None', []]]),
       yAxisAttr: 'count',
       selectedCellType: 'None',
@@ -101,7 +101,7 @@ export default {
   },
   async mounted() {
     this.cellMap.clear()
-    this.colorPalette.splice(0, this.length, ...colorPalette);
+    this.colorPalette.splice(0, this.length, ...colorPaletteSmall);
     const graphData = [];
     let cellTypes = new Set();
     // Unsorted initial dataset
