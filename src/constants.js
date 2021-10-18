@@ -1,26 +1,38 @@
-const BASE_URL = 'specimen_data/'
+const BASE_URL = 'specimen_data/ge_skin/'
 
 const datasets = [
-  'ASCT+B',
-  'Azimuth_L3',
-  'K1900174_2',
-  '18-162-2-M2',
-  '18-142-3-M2',
-  '18-312-2-M2',
-  'K1900175_1_R1',
-  'K1800430_3_R3',
-  'K1900019_1_R3',
-  'K1900387_1_R1',
-  'K1900387_4_R1',
-  'K2000094_2_R1',
-  '446_B3',
-  'K1800364_1',
-  '446_B1',
-  'KRP460C-1',
-  'KRP460P-1',
-  'KRP461C-1',
-  'KRP462C-1',
-  'KRP462P-1'
+  // 'ASCT+B',
+  // 'Azimuth_L3',
+  // 'K1900174_2',
+  // '18-162-2-M2',
+  // '18-142-3-M2',
+  // '18-312-2-M2',
+  // 'K1900175_1_R1',
+  // 'K1800430_3_R3',
+  // 'K1900019_1_R3',
+  // 'K1900387_1_R1',
+  // 'K1900387_4_R1',
+  // 'K2000094_2_R1',
+  // '446_B3',
+  // 'K1800364_1',
+  // '446_B1',
+  // 'KRP460C-1',
+  // 'KRP460P-1',
+  // 'KRP461C-1',
+  // 'KRP462C-1',
+  // 'KRP462P-1'
+  'case_1',
+  'case_2',
+  'case_3',
+  'case_4',
+  'case_5',
+  'case_6',
+  'case_7',
+  'case_8',
+  'case_9',
+  'case_10',
+  'case_11',
+  'case_12'
 ]
 
 const colorPalette = [
@@ -89,7 +101,10 @@ const OrderType = {
 const GroupType = {
   None: 'none',
   Sex: 'sex',
-  Ethnicity: 'race'
+  // Ethnicity: 'race'
+  Age: 'age',
+  Category: 'cat',
+  Exposure: 'exp'
 }
 
 export {

@@ -20,7 +20,7 @@
     <label for="raw_count">Raw Count</label>
     <input type="radio" id="percentage" name="yAxisAttr" value="percentage" v-model="yAxisAttr">
     <label for="percentage">Percentage</label>
-    <canvas id="stackedBars" ref="stackedBars" width="1600" height="1000"></canvas>
+    <canvas id="stackedBars" ref="stackedBars" width="1280" height="720"></canvas>
   </div>
 </template>
 
@@ -59,24 +59,33 @@ export default {
     getOrdering() {
       const orderedDatasets = this.cellMap.get(this.selectedCellType)
         // Exclude ASCT+B and Azimuth bars while ordering
-        .slice(2)
+        // .slice(2)
         .sort((d1, d2) => parseFloat(d1[this.yAxisAttr] || 0) - parseFloat(d2[this.yAxisAttr] || 0))
-      switch (this.groupBy) {
-        case 'sex': 
-        case 'race':
-          orderedDatasets.sort((d1, d2) => (d1[this.groupBy] ?? '').localeCompare(d2[this.groupBy] ?? ''))
+      if (this.groupBy !== GroupType.None) {
+        orderedDatasets.sort((d1, d2) => {
+          if (Number.isInteger(parseInt(d1[this.groupBy]))) {
+            return parseInt(d1[this.groupBy]) - parseInt(d2[this.groupBy])
+          }
+          return (d1[this.groupBy] ?? '').localeCompare(d2[this.groupBy] ?? '')
+        })
       }
       return orderedDatasets.map(dataset => dataset.id)
     },
     reorderDatasets() {
       let ordering = this.getOrdering()
-      ordering = [0, 1].concat(this.orderType === OrderType.Ascending? ordering : ordering.reverse())
+      ordering = // [0, 1].concat(
+        this.orderType === OrderType.Ascending? ordering : ordering.reverse()// )
       this.chart.data.datasets.forEach(d => {
         const datasets = this.cellMap.get(d.label)
         const orderedDatasets = ordering.map(i => datasets[i])
         d.data.splice(0, d.data.length, ...orderedDatasets.map(cellProps => cellProps[this.yAxisAttr]))
       })
-      this.chart.data.labels.splice(0, datasets.length, ...ordering.map(i => datasets[i]))
+      this.chart.data.labels.splice(0, datasets.length, ...ordering.map(i => {
+        if (this.groupBy !== GroupType.None) {
+          return datasets[i] + ` (${this.cellMap.get(this.selectedCellType)[i][this.groupBy]})`
+        }
+        return datasets[i]
+      }))
     },
     reorderAndUpdate() {
       this.reorderDatasets()
@@ -96,15 +105,11 @@ export default {
     const graphData = [];
     let cellTypes = new Set();
     // Unsorted initial dataset
-    for (const [idx, title] of datasets.entries()) {
+    for (const [, title] of datasets.entries()) {
       const csvData = await csv(`${BASE_URL}${title}.csv`);
       csvData.forEach(row => {
         cellTypes.add(row['cell_type'])
       })
-      const specimenProps = csvData.find(row => row[GroupType.Sex] && row[GroupType.Ethnicity])
-      if (specimenProps) {
-        datasets[idx] = `${title} (${specimenProps[GroupType.Ethnicity]}/${specimenProps[GroupType.Sex]})`
-      }
       graphData.push(csvData);
     }
     this.cellTypes = Array.from(cellTypes).sort()
@@ -117,11 +122,14 @@ export default {
       const cellXDatasets = []
       for (const [id, dataset] of graphData.entries()) {
         const cellProps = dataset.find(obj => obj['cell_type'] === ct) || {}
-        const { sex, race } = dataset.find(obj => obj[GroupType.Sex] && obj[GroupType.Ethnicity]) || {}
+        const { sex, race, age, cat, exp  } = dataset.find(obj => Object.values(GroupType).some(group => group !== GroupType.None && Object.keys(obj).includes(group))) || {}
         Object.assign(cellProps, {
           id,
           sex,
-          race
+          race,
+          age,
+          cat,
+          exp
         })
         cellXDatasets.push(cellProps)
       }
