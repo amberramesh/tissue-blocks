@@ -21,18 +21,18 @@ const datasets = [
   // 'KRP461C-1',
   // 'KRP462C-1',
   // 'KRP462P-1'
-  'case_1',
-  'case_2',
-  'case_3',
-  'case_4',
-  'case_5',
-  'case_6',
-  'case_7',
-  'case_8',
-  'case_9',
-  'case_10',
-  'case_11',
-  'case_12'
+  'region_12',
+  'region_1',
+  'region_2',
+  'region_3',
+  'region_4',
+  'region_5',
+  // 'region_6',
+  'region_7',
+  'region_8',
+  'region_9',
+  'region_10',
+  'region_11'
 ]
 
 const colorPaletteLarge = [

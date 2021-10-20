@@ -59,7 +59,7 @@ export default {
     getOrdering() {
       const orderedDatasets = this.cellMap.get(this.selectedCellType)
         // Exclude ASCT+B and Azimuth bars while ordering
-        .slice(0)
+        .slice(1)
         .sort((d1, d2) => parseFloat(d1[this.yAxisAttr] || 0) - parseFloat(d2[this.yAxisAttr] || 0))
       if (this.groupBy !== GroupType.None) {
         orderedDatasets.sort((d1, d2) => {
@@ -73,8 +73,8 @@ export default {
     },
     reorderDatasets() {
       let ordering = this.getOrdering()
-      ordering = // [0, 1].concat(
-        this.orderType === OrderType.Ascending ? ordering : ordering.reverse()// )
+      ordering = [0].concat(
+        this.orderType === OrderType.Ascending ? ordering : ordering.reverse())
       this.chart.data.datasets.forEach(d => {
         const datasets = this.cellMap.get(d.label)
         const orderedDatasets = ordering.map(i => datasets[i])
