@@ -1,7 +1,12 @@
 <template>
   <div id="app">
+    <label for="source">Source: </label>
+    <select id="source" v-model="selectedConfig" @change="initGraph">
+      <option v-for="c, i in allConfigs" :key="i" :value="i">{{ c.label }}</option>
+    </select>
+    <br /><br />
     <label for="selected_cell_type">Sort By: </label>
-    <select id="selected_cell_type" v-model="selectedCellType" @change="reorderAndUpdate">
+    <select id="selected_cell_type" v-model="sortBy" @change="reorderAndUpdate">
       <option v-for="name, i in cellTypes" :key="i" :value="name">{{ name }}</option>
     </select>
     &nbsp;
@@ -12,7 +17,7 @@
     <br /><br />
     <label for="group_by">Group By: </label>
     <select id="group_by" v-model="groupBy" @change="reorderAndUpdate">
-      <option v-for="group, i in GroupType" :key="i" :value="group.value">{{ group.name }}</option>
+      <option v-for="group, i in groupTypes" :key="i" :value="group.value">{{ group.name }}</option>
     </select>
     <br /><br />
     <label>Y-Axis: </label>
@@ -26,30 +31,41 @@
 
 <script>
 import { csv } from 'd3-fetch'
-import { BASE_URL, datasets, colorPaletteSmall, OrderType, GroupType } from './constants'
+import { OrderType, GroupType, Configs } from './constants'
+import pick from 'lodash.pick'
 
 export default {
   name: 'App',
   data() {
     return {
       chart: null,
-      colorPalette: [...colorPaletteSmall],
+      colorPalette: [],
       cellMap: new Map([['None', []]]),
       yAxisAttr: 'count',
-      selectedCellType: 'None',
+      sortBy: 'None',
       orderType: OrderType.Ascending,
       cellTypes: [],
       groupBy: GroupType.None,
-      GroupType: Object.entries(GroupType)
-        .reduce((types, [name, value]) => {
-          types.push({ name, value })
-          return types
-        }, [])
+      selectedConfig: 0,
+      allConfigs: Configs
     }
   },
   computed: {
+    config() {
+      return Configs[this.selectedConfig]
+    },
     yAxisLabel() {
       return this.yAxisAttr === 'count' ? 'Cell Count' : 'Cell Proportion'
+    },
+    groupTypes() {
+      return Object.entries(this.config.groupTypes)
+        .reduce((types, [name, value]) => {
+          types.push({ name, value })
+          return types
+        }, [{
+          name: 'None',
+          value: GroupType.None
+        }])
     }
   },
   methods: {
@@ -57,9 +73,9 @@ export default {
       return this.colorPalette.length ? this.colorPalette.pop() : `#${parseInt(Math.random() * (Math.pow(16, 6))).toString(16).padStart(6, '0')}`;
     },
     getOrdering() {
-      const orderedDatasets = this.cellMap.get(this.selectedCellType)
+      const orderedDatasets = this.cellMap.get(this.sortBy)
         // Exclude ASCT+B and Azimuth bars while ordering
-        .slice(1)
+        .slice(this.config.fixed)
         .sort((d1, d2) => parseFloat(d1[this.yAxisAttr] || 0) - parseFloat(d2[this.yAxisAttr] || 0))
       if (this.groupBy !== GroupType.None) {
         orderedDatasets.sort((d1, d2) => {
@@ -73,19 +89,108 @@ export default {
     },
     reorderDatasets() {
       let ordering = this.getOrdering()
-      ordering = [0].concat(
+      ordering = Array(this.config.fixed).fill().map((_, i) => i).concat(
         this.orderType === OrderType.Ascending ? ordering : ordering.reverse())
       this.chart.data.datasets.forEach(d => {
         const datasets = this.cellMap.get(d.label)
         const orderedDatasets = ordering.map(i => datasets[i])
         d.data.splice(0, d.data.length, ...orderedDatasets.map(cellProps => cellProps[this.yAxisAttr]))
       })
-      this.chart.data.labels.splice(0, datasets.length, ...ordering.map(i => {
+      this.chart.data.labels.splice(0, this.config.datasets.length, ...ordering.map(i => {
         if (this.groupBy !== GroupType.None) {
-          return datasets[i] + ` (${this.cellMap.get(this.selectedCellType)[i][this.groupBy]})`
+          const group = this.cellMap.get(this.sortBy)[i][this.groupBy]
+          return this.config.datasets[i] + (group ? ` (${group})` : '')
         }
-        return datasets[i]
+        return this.config.datasets[i]
       }))
+    },
+    async initGraph() {
+      // Reset all parameters
+      if (this.chart) {
+        this.chart.destroy()
+      }
+      this.sortBy = 'None'
+      this.groupBy = GroupType.None
+      this.orderType = OrderType.Ascending
+      this.cellMap.clear()
+      this.colorPalette.splice(0, this.colorPalette.length, ...this.config.colorPalette)
+      const graphData = []
+      const cellTypes = new Set()
+
+      // Create map from unsorted initial dataset
+      for (const title of this.config.datasets) {
+        const csvData = await csv(`${this.config.basePath}${title}.csv`)
+        csvData.forEach(row => {
+          cellTypes.add(row['cell_type'])
+        })
+        graphData.push(csvData)
+      }
+      // Add 'None' type for default ordering
+      // Then append the sorted cell names across all datasets
+      this.cellTypes = ['None'].concat(Array.from(cellTypes).sort())
+      // 3D Map of cell types vs. attributes over each dataset
+      // Third-dimension is the dataset object rather than another array
+      this.cellTypes.forEach(ct => {
+        // Array of d objects where d is number of datasets
+        const cellXDatasets = []
+        for (const [id, dataset] of graphData.entries()) {
+          const cellProps = dataset.find(obj => obj['cell_type'] === ct) || {}
+          const groupProps = dataset.find(obj => Object.values(this.config.groupTypes).every(group => group in obj)) || {}
+          Object.assign(cellProps, {
+            id,
+            ...pick(groupProps, Object.values(this.config.groupTypes))
+          })
+          cellXDatasets.push(cellProps)
+        }
+        this.cellMap.set(ct, cellXDatasets)
+      })
+
+      const ctx = this.$refs.stackedBars.getContext('2d');
+      const chartObj = {
+        type: 'bar',
+        data: {
+          labels: [...this.config.datasets],
+          // Exclude 'None' type while creating datasets
+          datasets: this.cellTypes.slice(1).map(label => {
+            return {
+              label,
+              data: this.cellMap.get(label).map(cellProps => cellProps[this.yAxisAttr]),
+              backgroundColor: this.getRandomColor()
+            }
+          })
+        },
+        options: {
+          plugins: {
+            title: {
+              display: true,
+              text: 'Cell Type Count Comparison'
+            },
+            legend: {
+              position: 'right'
+            }
+          },
+          responsive: true,
+          scales: {
+            x: {
+              stacked: true,
+              title: {
+                display: true,
+                text: 'Datasets'
+              },
+            },
+            y: {
+              stacked: true,
+              title: {
+                display: true,
+                text: this.yAxisLabel
+              },
+              max: this.yAxisAttr === 'percentage' ? 100 : null
+            }
+          }
+        }
+      };
+      // eslint-disable-next-line
+      this.chart = new Chart(ctx, chartObj);
     },
     reorderAndUpdate() {
       this.reorderDatasets()
@@ -100,87 +205,7 @@ export default {
     }
   },
   async mounted() {
-    this.cellMap.clear()
-    this.colorPalette.splice(0, this.length, ...colorPaletteSmall);
-    const graphData = [];
-    let cellTypes = new Set();
-    // Unsorted initial dataset
-    for (const [, title] of datasets.entries()) {
-      const csvData = await csv(`${BASE_URL}${title}.csv`);
-      csvData.forEach(row => {
-        cellTypes.add(row['cell_type'])
-      })
-      graphData.push(csvData);
-    }
-    this.cellTypes = Array.from(cellTypes).sort()
-    // Add 'None' type for default ordering
-    this.cellTypes.splice(0, 0, 'None')
-    // 3D Map of cell types vs. attributes over each dataset
-    // Third-dimension is the dataset object rather than another array
-    this.cellTypes.forEach(ct => {
-      // Array of d objects where d is number of datasets
-      const cellXDatasets = []
-      for (const [id, dataset] of graphData.entries()) {
-        const cellProps = dataset.find(obj => obj['cell_type'] === ct) || {}
-        const { sex, race, age, cat, exp  } = dataset[0] || {}
-        Object.assign(cellProps, {
-          id,
-          sex,
-          race,
-          age,
-          cat,
-          exp
-        })
-        cellXDatasets.push(cellProps)
-      }
-      this.cellMap.set(ct, cellXDatasets)
-    })
-
-    const ctx = this.$refs.stackedBars.getContext('2d');
-    const chartObj = {
-      type: 'bar',
-      data: {
-        labels: [...datasets],
-        // Exclude 'None' type while creating datasets
-        datasets: this.cellTypes.slice(1).map(label => {
-          return {
-            label,
-            data: this.cellMap.get(label).map(cellProps => cellProps[this.yAxisAttr]),
-            backgroundColor: this.getRandomColor()
-          }
-        })
-      },
-      options: {
-        plugins: {
-          title: {
-            display: true,
-            text: 'Cell Type Count Comparison'
-          },
-          legend: {
-            position: 'right'
-          }
-        },
-        responsive: true,
-        scales: {
-          x: {
-            stacked: true,
-            title: {
-              display: true,
-              text: 'Datasets'
-            }
-          },
-          y: {
-            stacked: true,
-            title: {
-              display: true,
-              text: this.yAxisLabel
-            }
-          }
-        }
-      }
-    };
-    // eslint-disable-next-line
-    this.chart = new Chart(ctx, chartObj);
+    this.initGraph()
   }
 }
 </script>
