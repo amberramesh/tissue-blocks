@@ -152,10 +152,13 @@ export default {
           labels: [...this.config.datasets],
           // Exclude 'None' type while creating datasets
           datasets: this.cellTypes.slice(1).map(label => {
+            // Stack certain cells differently using value available here
+            const cellStack = this.cellMap.get(label).find(obj => obj['stack']) || {}
             return {
               label,
               data: this.cellMap.get(label).map(cellProps => cellProps[this.yAxisAttr]),
-              backgroundColor: this.getRandomColor()
+              backgroundColor: this.getRandomColor(),
+              stack: cellStack['stack']
             }
           })
         },

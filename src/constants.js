@@ -78,26 +78,26 @@ const colorPaletteLarge = [
 ]
 
 const colorPaletteSmall = [
-  "#363d36",
-  "#77d445",
-  "#7240cc",
-  "#cacc48",
-  "#cc4ec8",
-  "#6ece85",
-  "#482d79",
-  "#c78941",
-  "#7d78d2",
-  "#d74e2a",
-  "#7ac9c3",
-  "#cd4858",
-  "#5a743a",
-  "#c54c8b",
-  "#cbc896",
-  "#572c4d",
-  "#cba9d5",
-  "#723726",
-  "#5f87a9",
-  "#bd8686"
+  "#ffe5be",
+  "#8ec6f6",
+  "#f6b89c",
+  "#92f4ff",
+  "#ffb9b6",
+  "#75d0c5",
+  "#c0bbf2",
+  "#9bbc8a",
+  "#a9a8ce",
+  "#bcfeda",
+  "#bba5b6",
+  "#9ad7b1",
+  "#e4e3ff",
+  "#b3ad82",
+  "#73b5cd",
+  "#deffe0",
+  "#c2a692",
+  "#dffaff",
+  "#87b4af",
+  "#ffe7ec"
 ]
 
 const Configs = [
