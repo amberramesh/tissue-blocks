@@ -5,8 +5,8 @@ const Source = {
 }
 
 const OrderType = {
-  Ascending: 'asc',
-  Descending: 'desc'
+  Ascending: 'ascending',
+  Descending: 'descending'
 }
 
 const GroupType = {
