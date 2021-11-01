@@ -17,7 +17,7 @@
       </select>
       <br /><br />
       <label for="group_by">Group By: </label>
-      <select id="group_by" v-model="groupBy" @change="specAndEmbed" disabled="true" title="Work in progress">
+      <select id="group_by" v-model="groupBy" @change="specAndEmbed">
         <option v-for="group, i in groupOptions" :key="i" :value="group.value">{{ group.name }}</option>
       </select>
       <br /><br />
@@ -126,12 +126,22 @@ export default {
         "width": {
           "step": 50
         },
-        "height": "container",
+        "height": 650,
         "mark": {
           "type": "bar",
           "tooltip": true
         },
         "encoding": {
+          "facet": this.groupBy === GroupType.None ? null : {
+            "field": this.groupBy,
+            "type": "ordinal",
+            "spacing": 10,
+            "sort": {
+              "field": "order",
+              "op": "sum",
+              "order": this.orderType
+            }
+          },
           "x": {
             "field": "dataset",
             "title": "Dataset",
@@ -143,7 +153,8 @@ export default {
             "type": "nominal",
             "axis": {
               "labelAngle": -25
-            }
+            },
+            "spacing": 70
           },
           "y": {
             "field": this.yAxisAttr,
@@ -169,7 +180,7 @@ export default {
         },
         "title": {
           "text": "Cell Type Count Comparison",
-          "offset": 30,
+          "anchor": "middle",
           "fontSize": 18
         },
         "transform": [
@@ -179,12 +190,13 @@ export default {
               datum.cell_type == '${this.sortBy}' ? 
               datum.${this.yAxisAttr} : 0`,
             "as": "order"
-          },
-          {
-            "type": "aggregate",
-            "groupby": this.groupBy !== GroupType.None ? [this.groupBy] : [],
           }
-        ]
+        ],
+        "resolve": {
+          "scale": {
+            "x": "independent"
+          }
+        }
       }
       this.result = await embed('#vis', spec)
     }
@@ -205,7 +217,6 @@ export default {
   margin-top: 60px;
 }
 #vis {
-  height: 700px;
   margin: 40px;
 }
 </style>
